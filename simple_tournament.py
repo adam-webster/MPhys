@@ -1,8 +1,6 @@
 import time
 t_import_0 = time.perf_counter() #to measure performance
 import axelrod as axl
-import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import pprint
 t_import_1 = time.perf_counter()
