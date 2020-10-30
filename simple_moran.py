@@ -40,7 +40,7 @@ def mutation():
                axl.Appeaser(), axl.CooperatorHunter()]
 
 
-    mp = axl.MoranProcess(players, mutation_rate=0.3)
+    mp = axl.MoranProcess(players, mutation_rate=0.1)
     for _ in mp:
         if len(mp.population_distribution()) == 1:
             break
