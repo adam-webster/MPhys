@@ -4,6 +4,7 @@ import axelrod as axl
 import matplotlib.pyplot as plt
 import pprint
 t_import_1 = time.perf_counter()
+print(f"Imports took {t_import_1-t_import_0:0.5f} seconds")
 
 
 def main():
@@ -19,7 +20,7 @@ def main():
     #print(results.ranked_names)
     #pprint.pprint(results.summarise())
     plot = axl.Plot(results)
-    #can just do axl.Plot(results).boxplot().show()
+    #can just do axl.Plot(results).boxplot()
     #this next code block gives better formatting options
     fig, ax = plt.subplots()
     title = ax.set_title('Payoff')
@@ -35,7 +36,6 @@ def main():
 
     #to measure performance, help us determine if we will need any HPC time
     t1 = time.perf_counter()
-    print(f"Imports took {t_import_1-t_import_0:0.5f} seconds")
     print(f"Program ran in {t1-t_import_1:0.5f} seconds")
 
     plt.show() #to show all plots called
