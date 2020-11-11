@@ -13,7 +13,7 @@ def main():
     players = [axl.Cooperator(), axl.Defector(),
                axl.TitForTat(), axl.Grudger(),
                axl.Alternator(), axl.AdaptorBrief(),
-               axl.AdaptorLong()]
+               axl.AdaptorLong(), axl.Adaptive()]
 
     tournament = axl.Tournament(players)
     results = tournament.play()
@@ -28,7 +28,7 @@ def main():
     plot.boxplot(ax=ax)
 
     #other results visuals available
-    plot.payoff()
+    plot.sdvplot()
 
 
     #or save all available to file, doesn't seem to work though
