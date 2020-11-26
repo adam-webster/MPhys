@@ -165,13 +165,13 @@ def main():
     grid = np.array([])
     if args.glider:
         grid = np.zeros(N*N).reshape(N, N)
-        addGlider(1, 1, grid)
+        addGlider(15, 1, grid)
     elif args.rotator:
         grid = np.zeros(N*N).reshape(N, N)
         addRotator(10, 10, grid)
     elif args.grower:
         grid = np.zeros(N*N).reshape(N, N)
-        addGrower(10, 10, grid)
+        addGrower(8, 8, grid)
     else:
         grid = randomGrid(N)
 
