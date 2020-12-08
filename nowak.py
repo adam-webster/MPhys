@@ -8,8 +8,10 @@ This will replicate results from Nowak & May
 import sys, argparse
 import numpy as np
 import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 import matplotlib.animation as animation
 from matplotlib.colors import LinearSegmentedColormap
+from progress.bar import IncrementalBar
 
 #to format the help screen nicely
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -76,20 +78,106 @@ def kings_neighbours(N, i, j, grid, scoreGrid, scoring=False):
            scoreGrid[(i+1)%N, (j-1)%N], scoreGrid[(i+1)%N, (j+1)%N]]
     return neighbours
 
+
+def fixed_bc_kings_neighbours(N, i, j, grid, scoreGrid, scoring=False):
+    '''This will generate a list of nearest 8 neighbours,
+       in kings move format, to location (i, j) on the grid.
+       Boundary conditions are now fixed.
+       Scoring parameter to be declared if you want to access the
+       grid of scores'''
+    if not scoring:
+        if i >= 1 and i < N:
+            if j >= 1 and j < N:
+                neighbours = [grid[i, (j-1)%N], grid[i, (j+1)%N],
+                    grid[(i-1)%N, j], grid[(i+1)%N, j],
+                    grid[(i-1)%N, (j-1)%N], grid[(i-1)%N, (j+1)%N],
+                    grid[(i+1)%N, (j-1)%N], grid[(i+1)%N, (j+1)%N]]
+            elif j == 0:
+                neighbours = [grid[i, (j+1)%N], grid[(i-1)%N, j],
+                    grid[(i+1)%N, j], grid[(i-1)%N, (j+1)%N],
+                    grid[(i+1)%N, (j+1)%N]]
+            elif j == N:
+                neighbours = [grid[i, (j-1)%N], grid[(i-1)%N, j],
+                    grid[(i+1)%N, j], grid[(i-1)%N, (j-1)%N],
+                    grid[(i+1)%N, (j-1)%N]]
+        elif i == 0:
+            if j >= 1 and j < N:
+                neighbours = [grid[i, (j-1)%N], grid[i, (j+1)%N],
+                   grid[(i+1)%N, j], grid[(i+1)%N, (j-1)%N],
+                   grid[(i+1)%N, (j+1)%N]]
+            elif j == 0:
+                neighbours = [grid[i, (j+1)%N], grid[(i+1)%N, j],
+                   grid[(i+1)%N, (j+1)%N]]
+            elif j == N:
+                neighbours = [grid[i, (j-1)%N], grid[(i+1)%N, j],
+                   grid[(i+1)%N, (j-1)%N]]
+        elif i == N:
+            if j >= 1 and j < N:
+                neighbours = [grid[i, (j-1)%N], grid[i, (j+1)%N],
+                    grid[(i-1)%N, j], grid[(i-1)%N, (j-1)%N],
+                    grid[(i-1)%N, (j+1)%N]]
+            elif j == 0:
+                neighbours = [grid[i, (j+1)%N], grid[(i-1)%N, j],
+                    grid[(i-1)%N, (j+1)%N]]
+            elif j == N:
+                neighbours = [grid[i, (j-1)%N], grid[(i-1)%N, j],
+                    grid[(i-1)%N, (j-1)%N]]
+
+    if scoring:
+        if i >= 1 and i < N:
+            if j >= 1 and j < N:
+                neighbours = [scoreGrid[i, (j-1)%N], scoreGrid[i, (j+1)%N],
+                    scoreGrid[(i-1)%N, j], scoreGrid[(i+1)%N, j],
+                    scoreGrid[(i-1)%N, (j-1)%N], scoreGrid[(i-1)%N, (j+1)%N],
+                    scoreGrid[(i+1)%N, (j-1)%N], scoreGrid[(i+1)%N, (j+1)%N]]
+            elif j == 0:
+                neighbours = [scoreGrid[i, (j+1)%N], scoreGrid[(i-1)%N, j],
+                    scoreGrid[(i+1)%N, j], scoreGrid[(i-1)%N, (j+1)%N],
+                    scoreGrid[(i+1)%N, (j+1)%N]]
+            elif j == N:
+                neighbours = [scoreGrid[i, (j-1)%N], scoreGrid[(i-1)%N, j],
+                    scoreGrid[(i+1)%N, j], scoreGrid[(i-1)%N, (j-1)%N],
+                    scoreGrid[(i+1)%N, (j-1)%N]]
+        elif i == 0:
+            if j >= 1 and j < N:
+                neighbours = [scoreGrid[i, (j-1)%N], scoreGrid[i, (j+1)%N],
+                   scoreGrid[(i+1)%N, j], scoreGrid[(i+1)%N, (j-1)%N],
+                   scoreGrid[(i+1)%N, (j+1)%N]]
+            elif j == 0:
+                neighbours = [scoreGrid[i, (j+1)%N], scoreGrid[(i+1)%N, j],
+                   scoreGrid[(i+1)%N, (j+1)%N]]
+            elif j == N:
+                neighbours = [scoreGrid[i, (j-1)%N], scoreGrid[(i+1)%N, j],
+                   scoreGrid[(i+1)%N, (j-1)%N]]
+        elif i == N:
+            if j >= 1 and j < N:
+                neighbours = [scoreGrid[i, (j-1)%N], scoreGrid[i, (j+1)%N],
+                    scoreGrid[(i-1)%N, j], scoreGrid[(i-1)%N, (j-1)%N],
+                    scoreGrid[(i-1)%N, (j+1)%N]]
+            elif j == 0:
+                neighbours = [scoreGrid[i, (j+1)%N], scoreGrid[(i-1)%N, j],
+                    scoreGrid[(i-1)%N, (j+1)%N]]
+            elif j == N:
+                neighbours = [scoreGrid[i, (j-1)%N], scoreGrid[(i-1)%N, j],
+                    scoreGrid[(i-1)%N, (j-1)%N]]
+    return neighbours
+
+
 def freq_calc(grid, N, b):
     '''This is designed to calculate the frequency of cooperators
        at each timestep, then plot how this changes over time'''
 
-
     time_list = np.arange(201)
     coop_freq_list = []
+    # present a progress bar in terminal for confidence in long running simulations
+    bar = IncrementalBar('Running', max=len(time_list),
+                        suffix='%(percent).1f%% complete - Time elapsed: %(elapsed)ds - Estimated time remaining: %(eta)ds')
     for timestep, time in enumerate(time_list):
-        # copy grid since we require 8 neighbors for calculation
+        # copy grid since we require 8 neighbours for calculation
         newGrid = grid.copy()
         #scoreGrid = scoreGrid.copy()
         scoreGrid = np.zeros(N*N).reshape(N, N)
-
-        # a cooperator in the grid is denoted by a 1, defector by q 0
+        # a cooperator in the grid is denoted by a 1, defector by a 0
         # so we count the amount of 1s in the grid at each step
         # then convert this to a frequency and add it to the list
         player, coop_count = np.unique(grid, return_counts=True)
@@ -105,13 +193,16 @@ def freq_calc(grid, N, b):
                 score = 0
                 # initiate a list of all their neighbours
                 # this is toroidal kings move condtions
-                neighbours = kings_neighbours(N, i, j, grid, scoreGrid)
-
+                #neighbours = kings_neighbours(N, i, j, grid, scoreGrid)
+                neighbours = fixed_bc_kings_neighbours(N, i, j, grid, scoreGrid)
                 # apply game rules
                 # coop playing themself will always get payoff 1
                 # no other self-interaction gives payoff
+                # remove this line to remove self-interaction
+                
                 if grid[i, j] == 1:
                     score += 1
+                
                 # play against each neighbour
                 for index, elem in enumerate(neighbours):
                     if elem == grid[i, j] and elem == COOP:
@@ -124,7 +215,7 @@ def freq_calc(grid, N, b):
                         score += b
                     # after playing each neighbour,
                     # update the score on the grid
-                    if index == 7:
+                    if index == len(neighbours)-1:
                         scoreGrid[i, j] = score
 
         # now each location has a score
@@ -133,8 +224,8 @@ def freq_calc(grid, N, b):
         for i in range(N):
             for j in range(N):
                 # create a list of the neighbours scores to compare with
-                scoreNeighbours = kings_neighbours(N, i, j, grid, scoreGrid, scoring=True)
-
+                #scoreNeighbours = kings_neighbours(N, i, j, grid, scoreGrid, scoring=True)
+                scoreNeighbours = fixed_bc_kings_neighbours(N, i, j, grid, scoreGrid, scoring=True)
                 # get location of highest score obtained by neighbours
                 sort_scoreNeighbours = sorted(scoreNeighbours)
                 hscore_index = scoreNeighbours.index(sort_scoreNeighbours[-1])
@@ -165,14 +256,17 @@ def freq_calc(grid, N, b):
                         newGrid[i, j] = grid[(i+1)%N, (j+1)%N]
 
         grid[:] = newGrid[:] # replace current grid with new grid
-
+        bar.next() # update progress bar
+    bar.finish()
     # now sort out the plotting, make it pretty
-    freqPlot = plt.plot(time_list,coop_freq_list)
+    plt.figure(figsize=(9,5))
+    freqPlot = plt.plot(time_list,coop_freq_list, linewidth=0.7)
     plt.title('b = ' + str(b))
+    plt.axhline(y=0.31776617, linestyle='--', color='gray', linewidth=0.7)
     plt.xlabel('Time')
     plt.ylabel('Frequency of Cooperators, x')
-    plt.xlim(0, len(time_list))
-    plt.ylim(0.1, 1)
+    plt.xlim(-1, len(time_list))
+    plt.ylim(0, 0.7)
     plt.show()
 
 
@@ -191,8 +285,8 @@ def update(frameNum, img, grid, N, b):
             score = 0
             # initiate a list of all their neighbours
             # this is toroidal kings move condtions
-            neighbours = kings_neighbours(N, i, j, grid, scoreGrid)
-
+            #neighbours = kings_neighbours(N, i, j, grid, scoreGrid)
+            neighbours = fixed_bc_kings_neighbours(N, i, j, grid, scoreGrid)
             # apply game rules
             # coop playing themself will always get payoff 1
             # no other self-interaction gives payoff
@@ -219,8 +313,8 @@ def update(frameNum, img, grid, N, b):
     for i in range(N):
         for j in range(N):
             # create a list of the neighbours scores to compare with
-            scoreNeighbours = kings_neighbours(N, i, j, grid, scoreGrid, scoring=True)
-
+            #scoreNeighbours = kings_neighbours(N, i, j, grid, scoreGrid, scoring=True)
+            scoreNeighbours = fixed_bc_kings_neighbours(N, i, j, grid, scoreGrid, scoring=True)
             # get location of highest score obtained by neighbours
             sort_scoreNeighbours = sorted(scoreNeighbours)
             hscore_index = scoreNeighbours.index(sort_scoreNeighbours[-1])
@@ -268,7 +362,9 @@ def main():
     parser.add_argument('--grid-size', '-N', dest='N', required=True,
     help='Size of grid to run the simulation on. This will generate a N x N square grid.')
     parser.add_argument('--movfile', dest='movfile', required=False,
-                        help='Saves the animation to filename/path you provide.')
+                        help='''Saves the animation to filename/path you provide.
+                        Saves as <arg>_<b arg>.gif or
+                        as <arg>_<b arg>.png if used with -f''')
     parser.add_argument('--interval', '-i', dest='interval', required=False,
                         help='''Interval between animation updates in milliseconds.
                         200 is default if this switch is not specified''')
@@ -320,6 +416,8 @@ def main():
 
     if args.frequency:
         freq_calc(grid, N, b)
+        if args.movfile:
+            plt.savefig(args.movfile+'_b='+str(b)+'.png')
     else:
         # set up animation
         fig, ax = plt.subplots()
@@ -333,13 +431,13 @@ def main():
                                       interval=updateInterval,
                                       save_count=50)
 
-    # saved animation duration in seconds is frames * (1 / fps)
-    # set output file
-    writergif = animation.PillowWriter(fps=30)
-    if args.movfile:
-        ani.save(args.movfile+'.gif',writer=writergif)
+        # saved animation duration in seconds is frames * (1 / fps)
+        # set output file
+        writergif = animation.PillowWriter(fps=30)
+        if args.movfile:
+            ani.save(args.movfile+'.gif',writer=writergif)
 
-    plt.show()
+        plt.show()
 
 
 # call main
