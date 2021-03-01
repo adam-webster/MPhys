@@ -1,9 +1,9 @@
 """
 Author: Adam W
 This will produce simulations of 'vaccinated' cells integration
-into a generally unvaccinated population. These will be run on a
-complex network which will be 2 interconnected populations with
-fixed boundaries.
+into a generally unvaccinated population. They are at random, 
+fixed locations. These will be run on a complex network which 
+will be 2 interconnected populations with fixed boundaries.
 """
 
 import sys, argparse, time, threading
